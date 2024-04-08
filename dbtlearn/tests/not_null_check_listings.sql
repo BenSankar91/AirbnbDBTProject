@@ -1,0 +1,1 @@
+{{not_null_check(ref('dim_listings_cleansed'))}}
