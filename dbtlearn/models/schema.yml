@@ -70,7 +70,6 @@ models:
     tests:
       - dbt_expectations.expect_table_column_count_to_equal_other_table:
           compare_model: ref("dim_listings_w_hosts")
-
     columns:
       - name: LISTING_ID
         description: The unique identifier for each Airbnb listing. This is a primary
@@ -84,6 +83,9 @@ models:
         description: The type of room that is being listed on Airbnb. This can include
           values such as 'Entire home/apt', 'Private room', or 'Shared room'.
         data_type: VARCHAR
+        tests:
+          - accepted_values: 
+              values: ["Entire home/apt","Private room","Shared room","Hotel room"]
       - name: MINIMUM_NIGHTS
         description: The 'MINIMUM_NIGHTS' column represents the minimum number of nights
           a guest can book a particular listing. It is an integer value.
@@ -93,6 +95,17 @@ models:
           listing. It is a numeric value, and the currency is not specified in
           the model.
         data_type: NUMBER
+        tests:
+          - dbt_expectations.expect_column_quantile_values_to_be_between:
+              quantile: 0.95
+              min_value: 50
+              max_value: 500
+          - dbt_expectations.expect_column_max_to_be_between:
+              max_value: 5000
+              config:
+                severity: warn
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: number
       - name: HOST_ID
         description: The 'HOST_ID' column is a unique identifier for the host of a
           particular listing. It is a foreign key that links to the
