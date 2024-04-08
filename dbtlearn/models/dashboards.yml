@@ -1,0 +1,18 @@
+version: 2
+
+exposures: 
+  - name: exec_dashboard
+    label: Executive Dashboard
+    type: dashboard
+    maturity: low
+    url: https://35262280.us2a.app.preset.io/superset/dashboard/8/
+    description: Dashboard built from the AIRBNB data in preset.io
+
+    depends_on:
+      - ref('dim_listings_w_hosts')
+      - ref('fact_reviews')
+      - ref('mart_full_moon_reviews')
+
+    owner:
+      name: Ben Sankaranarayanan
+      email: bensankar91@gmail.com

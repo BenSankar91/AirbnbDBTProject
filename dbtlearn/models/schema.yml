@@ -1,0 +1,146 @@
+version: 2
+models:
+  - name: dim_listings_cleansed
+    description: Cleansed listings data that was ontained from an AWS S3 bucket. Has
+      test cases to ensure data integrity
+    columns:
+      - name: LISTING_ID
+        description: The unique identifier for each listing. This is a primary key.
+        data_type: NUMBER
+      - name: LISTING_NAME
+        description: The name of the listing. This is a descriptive field that provides
+          information about the listing.
+        data_type: VARCHAR
+      - name: ROOM_TYPE
+        description: The type of room that is being listed. This can include values such
+          as 'Entire home/apt', 'Private room', or 'Shared room'.
+        data_type: VARCHAR
+      - name: MINIMUM_NIGHTS
+        description: This column represents the minimum number of nights a guest can
+          stay at the listing. If the original value was 0, it has been replaced
+          with 1 to ensure a minimum stay of one night.
+        data_type: NUMBER
+      - name: HOST_ID
+        description: This column represents the unique identifier for the host of the
+          listing. It is used to link the listing to the host who owns it.
+        data_type: NUMBER
+      - name: PRICE
+        description: This column represents the price of the listing per night. The
+          original value was a string with a dollar sign, which has been removed
+          and the remaining value has been cast to a decimal type for easier
+          calculations.
+        data_type: NUMBER
+      - name: CREATED_AT
+        description: The timestamp when the listing was first created. This is sourced
+          from the raw_listings table in the AIRBNB schema.
+        data_type: TIMESTAMP_NTZ
+      - name: UPDATED_AT
+        description: The timestamp when the listing was last updated. This is sourced
+          from the raw_listings table in the AIRBNB schema.
+        data_type: TIMESTAMP_NTZ
+  - name: dim_hosts_cleansed
+    description: Contains information about the hosts.
+    columns:
+      - name: HOST_ID
+        description: Unique Host ID, Primary key, not null
+        data_type: NUMBER
+      - name: HOST_NAME
+        description: Name of the host
+        data_type: VARCHAR
+      - name: IS_SUPERHOST
+        description: True/False flag that describes whether a host is a superhost with
+          AIRBNB
+        data_type: BOOLEAN
+      - name: CREATED_AT
+        description: Record creation timestamp
+        data_type: TIMESTAMP_NTZ
+      - name: UPDATED_AT
+        description: Last updated at timestamp
+        data_type: TIMESTAMP_NTZ
+  - name: dim_listings_w_hosts
+    description: The 'dim_listings_w_hosts' model is a combination of the
+      'dim_listings_cleansed' and 'dim_hosts_cleansed' models from the
+      AIRBNB.DEV schema. It includes information about Airbnb listings and their
+      respective hosts. The columns in this model include 'LISTING_ID',
+      'LISTING_NAME', 'ROOM_TYPE', 'MINIMUM_NIGHTS', 'PRICE', 'HOST_ID',
+      'HOST_NAME', 'IS_SUPERHOST', 'CREATED_AT', and 'UPDATED_AT'. The
+      'UPDATED_AT' column is determined by the most recent update time between
+      the listing and the host. This model is useful for analyzing Airbnb
+      listings in conjunction with host information.
+    tests:
+      - dbt_expectations.expect_table_column_count_to_equal_other_table:
+          compare_model: ref("dim_listings_w_hosts")
+
+    columns:
+      - name: LISTING_ID
+        description: The unique identifier for each Airbnb listing. This is a primary
+          key in the dim_listings_cleansed model.
+        data_type: NUMBER
+      - name: LISTING_NAME
+        description: The name of the Airbnb listing. This is a descriptive field that
+          provides more information about the listing.
+        data_type: VARCHAR
+      - name: ROOM_TYPE
+        description: The type of room that is being listed on Airbnb. This can include
+          values such as 'Entire home/apt', 'Private room', or 'Shared room'.
+        data_type: VARCHAR
+      - name: MINIMUM_NIGHTS
+        description: The 'MINIMUM_NIGHTS' column represents the minimum number of nights
+          a guest can book a particular listing. It is an integer value.
+        data_type: NUMBER
+      - name: PRICE
+        description: The 'PRICE' column represents the price per night for a particular
+          listing. It is a numeric value, and the currency is not specified in
+          the model.
+        data_type: NUMBER
+      - name: HOST_ID
+        description: The 'HOST_ID' column is a unique identifier for the host of a
+          particular listing. It is a foreign key that links to the
+          'dim_hosts_cleansed' model.
+        data_type: NUMBER
+      - name: HOST_NAME
+        description: The 'HOST_NAME' column represents the name of the host for the
+          Airbnb listing. This is a string value that is sourced from the
+          'dim_hosts_cleansed' model in the AIRBNB.DEV schema.
+        data_type: VARCHAR
+      - name: IS_SUPERHOST
+        description: The 'IS_SUPERHOST' column indicates whether the host for the Airbnb
+          listing is a superhost or not. This is a boolean value (True/False)
+          that is sourced from the 'dim_hosts_cleansed' model in the AIRBNB.DEV
+          schema.
+        data_type: BOOLEAN
+      - name: CREATED_AT
+        description: The 'CREATED_AT' column represents the timestamp when the Airbnb
+          listing was created. This is a datetime value that is sourced from the
+          'dim_listings_cleansed' model in the AIRBNB.DEV schema.
+        data_type: TIMESTAMP_NTZ
+      - name: UPDATED_AT
+        description: The 'UPDATED_AT' column represents the most recent update timestamp
+          between the listing and the host. It is derived from the 'updated_at'
+          columns of both the 'dim_listings_cleansed' and 'dim_hosts_cleansed'
+          models, taking the latest of the two.
+        data_type: TIMESTAMP_NTZ
+  - name: fact_reviews
+    description: This is a fact table containing the review information.
+    columns:
+      - name: REVIEW_ID
+        description: ID of the review
+        data_type: VARCHAR
+        tests:
+          - not_null
+      - name: LISTING_ID
+        description: The listing id points to the listing to which the review was submitted
+        data_type: NUMBER
+      - name: REVIEW_DATE
+        description: The date of review. We have a test case to ensure that a review is
+          submitted only after the stay concludes.
+        data_type: TIMESTAMP_NTZ
+      - name: REVIEWER_NAME
+        description: Name of the reviewer
+        data_type: VARCHAR
+      - name: REVIEW_TEXT
+        description: The actual review text
+        data_type: VARCHAR
+      - name: REVIEW_SENTIMENT
+        description: Sentiment tells us the tone of the review
+        data_type: VARCHAR
